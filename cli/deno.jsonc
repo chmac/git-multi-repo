@@ -2,6 +2,7 @@
   "tasks": {
     "dev": "deno run --watch main.ts",
     "cache": "deno cache deps.ts",
-    "run": "deno run --allow-run --allow-env --allow-read main.ts"
+    "run": "deno run --allow-run --allow-env --allow-read main.ts",
+    "compile": "deno compile --allow-run --allow-env --allow-read --output ./build/git-multi-repo main.ts"
   }
 }
