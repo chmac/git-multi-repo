@@ -24,6 +24,28 @@ async function getGitStatus(path: string, verbose = false) {
   return statusLines;
 }
 
+async function getGitBranchStatus(path: string, verbose = false) {
+  const branchLines = await run("git branch -vv", { cwd: path, verbose });
+  const currentBranch = branchLines
+    .split("\n")
+    .find((line) => line.startsWith("* "));
+  if (typeof currentBranch === "undefined") {
+    const message = "#m5nOET Failed to find current branch";
+    console.error(message);
+    console.error(path);
+    throw new Error(message);
+  }
+  const results = currentBranch.match(/\[([^\]]+)]/);
+  if (results === null) {
+    const message = "#S3XkPT Failed to extract current branch";
+    console.error(message);
+    console.error(path);
+    throw new Error(message);
+  }
+  const branchInfo = results[0];
+  return branchInfo;
+}
+
 await new cliffy.Command()
   .name("git-multi-repo")
   .version("0.1.0")
@@ -38,24 +60,33 @@ await new cliffy.Command()
     const repoStatuses = await Promise.allSettled(
       repos.map(async (repo) => {
         const statusLines = await getGitStatus(repo.path);
+        const branchInfo = await getGitBranchStatus(repo.path);
         const hasChanges = statusLines.length !== 0;
-        return { ...repo, statusLines, hasChanges };
+        return { ...repo, statusLines, hasChanges, branchInfo };
       })
     );
 
     repoStatuses.forEach((repo) => {
       if (repo.status === "fulfilled") {
-        const { name, hasChanges, statusLines } = repo.value;
+        const { name, hasChanges, statusLines, branchInfo } = repo.value;
 
-        const nameOutput = colours.red(name);
+        const nameOutput = colours.magenta(name);
+        const branchOutput =
+          branchInfo.includes("ahead") || branchInfo.includes("behind")
+            ? colours.red(branchInfo)
+            : branchInfo;
 
         if (hasChanges) {
-          console.log(`${nameOutput}:`);
+          console.log(
+            `${nameOutput} - ${colours.red("has changes")} - ${branchOutput}:`
+          );
           statusLines.split("\n").forEach((line) => {
             console.log(`  ${line}`);
           });
         } else {
-          console.log(`${nameOutput} - ${colours.green("no changes")}`);
+          console.log(
+            `${nameOutput} - ${colours.green("no changes")} - ${branchOutput}`
+          );
         }
       }
     });
