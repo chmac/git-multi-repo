@@ -52,6 +52,9 @@ await new cliffy.Command()
   .globalEnv("HOME=<path:string>", "The user's home directory", {
     required: true,
   })
+  .action(function () {
+    this.showHelp();
+  })
   .command("status")
   .action(async (options) => {
     const config = await loadConfig(options.home);
