@@ -58,13 +58,33 @@ Example `git push --porcelain` output looks like:
 To github.com:chmac/git-multi-repo.git
 =	refs/heads/main:refs/heads/main	[up to date]
 Done
+
+Another example looks like:
+
+Enumerating objects: 7, done.
+Counting objects: 100% (7/7), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 907 bytes | 907.00 KiB/s, done.
+Total 4 (delta 3), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (3/3), completed with 3 local objects.
+To github.com:chmac/git-multi-repo.git
+ 	refs/heads/main:refs/heads/main	e0e4db2..1d6ad1f
+Done
 */
 
 async function gitPush(path: string, verbose = false) {
   const output = await run("git push --porcelain", { cwd: path, verbose });
   const lines = output.split("\n");
   const pushedLines = lines.filter((line) => line.startsWith("= "));
-  const noChanges = pushedLines.every((line) => line.endsWith(" [up to date]"));
+  // NOTE: This is an imperfect check. When something is pushed, lines don't end
+  // with [up to date]. But they also don't start with `= `. So here we assume
+  // if that no lines begin with `= ` then nothing was pushed. It's also
+  // possible no upstream branch was configured, but we choose to ignore that
+  // possibility.
+  const noChanges =
+    pushedLines.length === 0 ||
+    pushedLines.every((line) => line.endsWith(" [up to date]"));
   const linesWithoutLastLine = lines.slice(0, lines.length - 1);
   const outputWithoutLastLine = linesWithoutLastLine.join("\n");
   return { output: outputWithoutLastLine, noChanges };
