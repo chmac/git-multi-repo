@@ -52,6 +52,24 @@ async function gitPull(path: string, verbose = false) {
   return { output, noChanges };
 }
 
+/**
+Example `git push --porcelain` output looks like:
+
+To github.com:chmac/git-multi-repo.git
+=	refs/heads/main:refs/heads/main	[up to date]
+Done
+*/
+
+async function gitPush(path: string, verbose = false) {
+  const output = await run("git push --porcelain", { cwd: path, verbose });
+  const lines = output.split("\n");
+  const pushedLines = lines.filter((line) => line.startsWith("= "));
+  const noChanges = pushedLines.every((line) => line.endsWith(" [up to date]"));
+  const linesWithoutLastLine = lines.slice(0, lines.length - 1);
+  const outputWithoutLastLine = linesWithoutLastLine.join("\n");
+  return { output: outputWithoutLastLine, noChanges };
+}
+
 await new cliffy.Command()
   .name("git-multi-repo")
   .version("0.1.0")
@@ -131,6 +149,40 @@ await new cliffy.Command()
       console.log(`${nameOutput} - ${pullLabel}`);
       if (!noChanges) {
         outputIndented.forEach(console.log);
+      }
+    });
+  })
+  .command("push")
+  .action(async (options) => {
+    const config = await loadConfig(options.home);
+
+    const { repos } = config;
+    const repoStatuses = await Promise.allSettled(
+      repos.map(async (repo) => {
+        const push = await gitPush(repo.path);
+        return { ...repo, ...push };
+      })
+    );
+
+    repoStatuses.forEach((result) => {
+      if (result.status === "rejected") {
+        console.error("#FU1MPf Internal error");
+        console.error(result.reason);
+        return;
+      }
+      const { name, noChanges, output } = result.value;
+      const nameOutput = colours.magenta(name);
+      const pullLabel = noChanges
+        ? // NOTE: We use `git push --porcelain` because otherwise it doesn't
+          // generate any output. So we default to outputting the standard git
+          // response for no changes here, even though it's not what we actually
+          // get from the git command.
+          colours.yellow("Everything up-to-date")
+        : colours.green("pushed changes");
+      const outputIndented = output.split("\n").map((line) => `  ${line}`);
+      console.log(`${nameOutput} - ${pullLabel}`);
+      if (!noChanges) {
+        outputIndented.forEach((line) => console.log(line));
       }
     });
   })
