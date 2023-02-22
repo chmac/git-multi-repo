@@ -46,6 +46,12 @@ async function getGitBranchStatus(path: string, verbose = false) {
   return branchInfo;
 }
 
+async function gitPull(path: string, verbose = false) {
+  const output = await run("git pull", { cwd: path, verbose });
+  const noChanges = output === "Already up to date.";
+  return { output, noChanges };
+}
+
 await new cliffy.Command()
   .name("git-multi-repo")
   .version("0.1.0")
@@ -70,27 +76,61 @@ await new cliffy.Command()
     );
 
     repoStatuses.forEach((repo) => {
-      if (repo.status === "fulfilled") {
-        const { name, hasChanges, statusLines, branchInfo } = repo.value;
+      if (repo.status === "rejected") {
+        console.error("#zub2MQ Internal error");
+        console.error(repo.reason);
+        return;
+      }
 
-        const nameOutput = colours.magenta(name);
-        const branchOutput =
-          branchInfo.includes("ahead") || branchInfo.includes("behind")
-            ? colours.red(branchInfo)
-            : branchInfo;
+      const { name, hasChanges, statusLines, branchInfo } = repo.value;
 
-        if (hasChanges) {
-          console.log(
-            `${nameOutput} - ${colours.red("has changes")} - ${branchOutput}:`
-          );
-          statusLines.split("\n").forEach((line) => {
-            console.log(`  ${line}`);
-          });
-        } else {
-          console.log(
-            `${nameOutput} - ${colours.green("no changes")} - ${branchOutput}`
-          );
-        }
+      const nameOutput = colours.magenta(name);
+      const branchOutput =
+        branchInfo.includes("ahead") || branchInfo.includes("behind")
+          ? colours.red(branchInfo)
+          : branchInfo;
+
+      if (hasChanges) {
+        console.log(
+          `${nameOutput} - ${colours.red("has changes")} - ${branchOutput}:`
+        );
+        statusLines.split("\n").forEach((line) => {
+          console.log(`  ${line}`);
+        });
+      } else {
+        console.log(
+          `${nameOutput} - ${colours.green("no changes")} - ${branchOutput}`
+        );
+      }
+    });
+  })
+  .command("pull")
+  .action(async (options) => {
+    const config = await loadConfig(options.home);
+
+    const { repos } = config;
+    const repoStatuses = await Promise.allSettled(
+      repos.map(async (repo) => {
+        const pull = await gitPull(repo.path);
+        return { ...repo, ...pull };
+      })
+    );
+
+    repoStatuses.forEach((result) => {
+      if (result.status === "rejected") {
+        console.error("#t5d1OI Internal error");
+        console.error(result.reason);
+        return;
+      }
+      const { name, noChanges, output } = result.value;
+      const nameOutput = colours.magenta(name);
+      const pullLabel = noChanges
+        ? colours.yellow(output)
+        : colours.green("pulled changes");
+      const outputIndented = output.split("\n").map((line) => `  ${line}`);
+      console.log(`${nameOutput} - ${pullLabel}`);
+      if (!noChanges) {
+        outputIndented.forEach(console.log);
       }
     });
   })
