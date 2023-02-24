@@ -83,6 +83,13 @@ async function gitPush(path: string, verbose = false) {
   return { output: outputWithoutLastLine, noChanges };
 }
 
+function generateNameOutput(repo: Repo): string {
+  const { name, alias } = repo;
+  const aliasText = typeof alias === "string" ? ` (${alias})` : "";
+  const nameOutput = colours.magenta(`${name}${aliasText}`);
+  return nameOutput;
+}
+
 await new cliffy.Command()
   .name("git-multi-repo")
   .version("0.1.0")
@@ -113,10 +120,10 @@ await new cliffy.Command()
         return;
       }
 
-      const { name, alias, hasChanges, statusLines, branchInfo } = repo.value;
+      const { hasChanges, statusLines, branchInfo } = repo.value;
 
-      const aliasText = typeof alias === "string" ? ` (${alias})` : "";
-      const nameOutput = colours.magenta(`${name}${aliasText}`);
+      const nameOutput = generateNameOutput(repo.value);
+
       const branchOutput =
         branchInfo.includes("ahead") || branchInfo.includes("behind")
           ? colours.red(branchInfo)
@@ -154,8 +161,8 @@ await new cliffy.Command()
         console.error(result.reason);
         return;
       }
-      const { name, noChanges, output } = result.value;
-      const nameOutput = colours.magenta(name);
+      const { noChanges, output } = result.value;
+      const nameOutput = generateNameOutput(result.value);
       const pullLabel = noChanges
         ? colours.yellow(output)
         : colours.green("pulled changes");
@@ -184,8 +191,8 @@ await new cliffy.Command()
         console.error(result.reason);
         return;
       }
-      const { name, noChanges, output } = result.value;
-      const nameOutput = colours.magenta(name);
+      const { noChanges, output } = result.value;
+      const nameOutput = generateNameOutput(result.value);
       const pullLabel = noChanges
         ? // NOTE: We use `git push --porcelain` because otherwise it doesn't
           // generate any output. So we default to outputting the standard git
