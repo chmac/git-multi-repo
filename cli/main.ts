@@ -83,6 +83,20 @@ async function gitPush(path: string, verbose = false) {
   return { output: outputWithoutLastLine, noChanges };
 }
 
+async function gitAddAndCommit(
+  path: string,
+  commitMessage: string,
+  verbose = false
+) {
+  const runOptions = { cwd: path, verbose };
+  const addOutput = await run("git add .", runOptions);
+  const commitOutput = await run(
+    ["git", "commit", "-m", commitMessage],
+    runOptions
+  );
+  return { addOutput, commitOutput };
+}
+
 function generateNameOutput(repo: Repo): string {
   const { name, alias } = repo;
   const aliasText = typeof alias === "string" ? ` (${alias})` : "";
@@ -206,5 +220,32 @@ await new cliffy.Command()
         outputIndented.forEach((line) => console.log(line));
       }
     });
+  })
+  .command("commit")
+  .arguments("<repo:string> <commitMessage:string>")
+  .action(async function (options, repoNameOrAlias, commitMessage) {
+    const config = await loadConfig(options.home);
+
+    const repo = config.repos.find(
+      ({ name, alias }) => name === repoNameOrAlias || alias === repoNameOrAlias
+    );
+
+    if (typeof repo === "undefined") {
+      const validOptions = config.repos
+        .flatMap(({ alias, name }) =>
+          typeof alias === "string" ? [alias, name] : name
+        )
+        .join(" ");
+
+      throw new cliffy.ValidationError(
+        `#P74Q8s <repo> must be one of the repo names or aliases. Valid values:\n    ${validOptions}`
+      );
+    }
+
+    const { commitOutput } = await gitAddAndCommit(repo.path, commitMessage);
+
+    const nameOutput = generateNameOutput(repo);
+    console.log(`${nameOutput} - ${colours.green("committed")}`);
+    console.log(commitOutput);
   })
   .parse();
