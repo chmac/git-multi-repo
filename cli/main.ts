@@ -2,6 +2,7 @@ import { cliffy, colours, debug_root, path, run } from "./deps.ts";
 
 type Repo = {
   name: string;
+  alias?: string;
   path: string;
 };
 type Config = {
@@ -112,9 +113,10 @@ await new cliffy.Command()
         return;
       }
 
-      const { name, hasChanges, statusLines, branchInfo } = repo.value;
+      const { name, alias, hasChanges, statusLines, branchInfo } = repo.value;
 
-      const nameOutput = colours.magenta(name);
+      const aliasText = typeof alias === "string" ? ` (${alias})` : "";
+      const nameOutput = colours.magenta(`${name}${aliasText}`);
       const branchOutput =
         branchInfo.includes("ahead") || branchInfo.includes("behind")
           ? colours.red(branchInfo)
