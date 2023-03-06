@@ -48,7 +48,7 @@ async function getGitBranchStatus(path: string, verbose = false) {
 }
 
 async function gitPull(path: string, verbose = false) {
-  const output = await run("git pull", { cwd: path, verbose });
+  const output = await run("git pull --no-stat", { cwd: path, verbose });
   const noChanges = output === "Already up to date.";
   return { output, noChanges };
 }
