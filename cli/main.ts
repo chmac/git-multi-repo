@@ -169,8 +169,11 @@ await new cliffy.Command()
       })
     );
 
-    repoStatuses.forEach((result) => {
+    repoStatuses.forEach((result, index) => {
       if (result.status === "rejected") {
+        const repo = repos[index];
+        const nameOutput = generateNameOutput(repo);
+        console.log(nameOutput);
         console.error("#t5d1OI Internal error");
         console.error(result.reason);
         return;
