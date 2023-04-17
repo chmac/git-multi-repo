@@ -131,7 +131,8 @@ await new cliffy.Command()
       if (result.status === "rejected") {
         const repo = repos[index];
         const nameOutput = generateNameOutput(repo);
-        console.log(nameOutput);
+        const errorsOutput = colours.red("error");
+        console.log(`${nameOutput} - ${errorsOutput}`);
         console.error("#zub2MQ Internal error");
         console.error(result.reason);
         return;
@@ -176,7 +177,8 @@ await new cliffy.Command()
       if (result.status === "rejected") {
         const repo = repos[index];
         const nameOutput = generateNameOutput(repo);
-        console.log(nameOutput);
+        const errorsOutput = colours.red("error");
+        console.log(`${nameOutput} - ${errorsOutput}`);
         console.error("#t5d1OI Internal error");
         console.error(result.reason);
         return;
@@ -209,7 +211,8 @@ await new cliffy.Command()
       if (result.status === "rejected") {
         const repo = repos[index];
         const nameOutput = generateNameOutput(repo);
-        console.log(nameOutput);
+        const errorsOutput = colours.red("error");
+        console.log(`${nameOutput} - ${errorsOutput}`);
         console.error("#FU1MPf Internal error");
         console.error(result.reason);
         return;
