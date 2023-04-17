@@ -127,16 +127,19 @@ await new cliffy.Command()
       })
     );
 
-    repoStatuses.forEach((repo) => {
-      if (repo.status === "rejected") {
+    repoStatuses.forEach((result, index) => {
+      if (result.status === "rejected") {
+        const repo = repos[index];
+        const nameOutput = generateNameOutput(repo);
+        console.log(nameOutput);
         console.error("#zub2MQ Internal error");
-        console.error(repo.reason);
+        console.error(result.reason);
         return;
       }
 
-      const { hasChanges, statusLines, branchInfo } = repo.value;
+      const { hasChanges, statusLines, branchInfo } = result.value;
 
-      const nameOutput = generateNameOutput(repo.value);
+      const nameOutput = generateNameOutput(result.value);
 
       const branchOutput =
         branchInfo.includes("ahead") || branchInfo.includes("behind")
@@ -202,8 +205,11 @@ await new cliffy.Command()
       })
     );
 
-    repoStatuses.forEach((result) => {
+    repoStatuses.forEach((result, index) => {
       if (result.status === "rejected") {
+        const repo = repos[index];
+        const nameOutput = generateNameOutput(repo);
+        console.log(nameOutput);
         console.error("#FU1MPf Internal error");
         console.error(result.reason);
         return;
